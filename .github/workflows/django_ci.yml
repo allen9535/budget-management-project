@@ -25,12 +25,16 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-    - name: Setting Environments
-      run: echo "DJANGO_SECRET_KEY=${{secrets.DJANGO_SECRET_KEY}}" >> .env && \
-            echo "EMAIL_HOST=${{secrets.EMAIL_HOST}}" >> .env && \
-            echo "EMAIL_PORT=${{secrets.EMAIL_PORT}}" >> .env && \
-            echo "EMAIL_HOST_USER=${{secrets.EMAIL_HOST_USER}}" >> .env && \
-            echo "EMAIL_HOST_PASSWORD=${{secrets.EMAIL_HOST_PASSWORD}}" >> .env
+    - name: Setting Django Secret Key
+      run: echo "DJANGO_SECRET_KEY=${{secrets.DJANGO_SECRET_KEY}}" >> .env
+    - name: Setting Email Host
+      run: echo "EMAIL_HOST=${{secrets.EMAIL_HOST}}" >> .env
+    - name: Setting Email Port
+      run: echo "EMAIL_PORT=${{secrets.EMAIL_PORT}}" >> .env
+    - name: Setting Email Host Uesr
+      run: echo "EMAIL_HOST_USER=${{secrets.EMAIL_HOST_USER}}" >> .env
+    - name: Setting Email Host Password
+      run: echo "EMAIL_HOST_PASSWORD=${{secrets.EMAIL_HOST_PASSWORD}}" >> .env
     - name: Run Tests
       run: |
         python manage.py test
