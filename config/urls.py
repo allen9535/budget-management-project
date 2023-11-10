@@ -22,4 +22,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
 
     path('api/v1/accounts/', include('accounts.urls')),
+    path('api/v1/categories/', include('categories.urls')),
+    path('api/v1/budgets/', include('budgets.urls')),
+    path('api/v1/spends/', include('spends.urls')),
 ]
