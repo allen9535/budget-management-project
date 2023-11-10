@@ -45,7 +45,7 @@ class BudgetCreateViewTestCase(APITestCase):
         ]
 
         response = self.client.post(
-            path=reverse('budget-create'),
+            path=reverse('budget_create'),
             data=data,
             format='json'
         )
@@ -65,7 +65,7 @@ class BudgetCreateViewTestCase(APITestCase):
         ]
 
         response = self.client.post(
-            path=reverse('budget-create'),
+            path=reverse('budget_create'),
             data=data,
             format='json'
         )
@@ -88,7 +88,7 @@ class BudgetCreateViewTestCase(APITestCase):
         ]
 
         response = self.client.post(
-            path=reverse('budget-create'),
+            path=reverse('budget_create'),
             data=data,
             format='json'
         )
@@ -111,7 +111,7 @@ class BudgetCreateViewTestCase(APITestCase):
         ]
 
         response = self.client.post(
-            path=reverse('budget-create'),
+            path=reverse('budget_create'),
             data=data,
             format='json'
         )
@@ -134,7 +134,7 @@ class BudgetCreateViewTestCase(APITestCase):
         ]
 
         response = self.client.post(
-            path=reverse('budget-create'),
+            path=reverse('budget_create'),
             data=data,
             format='json'
         )
@@ -157,7 +157,7 @@ class BudgetCreateViewTestCase(APITestCase):
         ]
 
         response = self.client.post(
-            path=reverse('budget-create'),
+            path=reverse('budget_create'),
             data=data,
             format='json'
         )
@@ -181,7 +181,7 @@ class BudgetCreateViewTestCase(APITestCase):
         ]
 
         response = self.client.post(
-            path=reverse('budget-create'),
+            path=reverse('budget_create'),
             data=data,
             format='json'
         )
@@ -205,7 +205,7 @@ class BudgetCreateViewTestCase(APITestCase):
         ]
 
         response = self.client.post(
-            path=reverse('budget-create'),
+            path=reverse('budget_create'),
             data=data,
             format='json'
         )
@@ -229,7 +229,7 @@ class BudgetCreateViewTestCase(APITestCase):
         ]
 
         response = self.client.post(
-            path=reverse('budget-create'),
+            path=reverse('budget_create'),
             data=data,
             format='json'
         )
@@ -253,7 +253,7 @@ class BudgetCreateViewTestCase(APITestCase):
         ]
 
         response = self.client.post(
-            path=reverse('budget-create'),
+            path=reverse('budget_create'),
             data=data,
             format='json'
         )

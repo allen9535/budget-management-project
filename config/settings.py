@@ -40,6 +40,7 @@ CUSTOM_APPS = [
     'accounts',
     'categories',
     'budgets',
+    'spends',
 ]
 
 THIRD_PARTY_APPS = [

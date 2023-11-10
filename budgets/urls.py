@@ -4,5 +4,5 @@ from .views import BudgetCreateAPIView
 
 
 urlpatterns = [
-    path('create/', BudgetCreateAPIView.as_view(), name='budget-create'),
+    path('create/', BudgetCreateAPIView.as_view(), name='budget_create'),
 ]

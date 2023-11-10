@@ -16,6 +16,7 @@ def get_object_or_none(model, **kwargs):
         return None
 
 
+# api/v1/budgets/create/
 class BudgetCreateAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -51,7 +52,6 @@ class BudgetCreateAPIView(APIView):
                     '%Y-%m-%d'
                 ).date()
             except (ValueError, TypeError) as e:
-                print(e)
                 return Response(
                     {'message': f'유효한 값을 입력해주세요. {e}'},
                     status=status.HTTP_406_NOT_ACCEPTABLE

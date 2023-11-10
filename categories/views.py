@@ -7,6 +7,7 @@ from .serializers import CategorySerializer
 from .models import Category
 
 
+# api/v1/categories/list/
 class CategoryListAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
