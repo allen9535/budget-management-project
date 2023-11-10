@@ -50,7 +50,7 @@ class BudgetCreateAPIView(APIView):
                     data.get('end_at'),
                     '%Y-%m-%d'
                 ).date()
-            except ValueError as e:
+            except (ValueError, TypeError) as e:
                 print(e)
                 return Response(
                     {'message': f'유효한 값을 입력해주세요. {e}'},
