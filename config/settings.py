@@ -38,6 +38,9 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 CUSTOM_APPS = [
     'accounts',
+    'categories',
+    'budgets',
+    'spends',
 ]
 
 THIRD_PARTY_APPS = [
@@ -56,7 +59,6 @@ SYSTEM_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
 ]
 
 INSTALLED_APPS = SYSTEM_APPS + THIRD_PARTY_APPS + CUSTOM_APPS
