@@ -16,10 +16,13 @@ django-timezone-field==6.0.1
 djangorestframework==3.14.0
 djangorestframework-simplejwt==5.3.0
 drf-yasg==1.21.7
+Faker==20.0.0
 inflection==0.5.1
 kombu==5.3.3
 load-dotenv==0.1.0
+numpy==1.26.1
 packaging==23.2
+pandas==2.1.2
 prompt-toolkit==3.0.39
 PyJWT==2.8.0
 python-crontab==3.0.0
