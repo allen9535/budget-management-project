@@ -1,9 +1,14 @@
 from django.urls import path
 
-from .views import BudgetCreateAPIView, BudgetListAPIView
+from .views import BudgetCreateAPIView, BudgetListAPIView, BudgetDetailAPIView
 
 
 urlpatterns = [
     path('create/', BudgetCreateAPIView.as_view(), name='budget_create'),
     path('list/', BudgetListAPIView.as_view(), name='budget_list'),
+    path(
+        'detail/<int:budget_no>',
+        BudgetDetailAPIView.as_view(),
+        name='budget_detail'
+    ),
 ]

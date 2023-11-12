@@ -3,9 +3,15 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 
+from django.core.exceptions import ObjectDoesNotExist
+
 from categories.models import Category
 from .models import Budget
-from .serializers import BudgetSerializer, BudgetListSerializer
+from .serializers import (
+    BudgetSerializer,
+    BudgetListSerializer,
+    BudgetDetailSerializer
+)
 
 from datetime import datetime
 
@@ -90,5 +96,24 @@ class BudgetListAPIView(APIView):
         budget_list = Budget.objects.filter(user=user)
 
         serializer = BudgetListSerializer(budget_list, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class BudgetDetailAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, budget_no):
+        user = request.user
+
+        try:
+            budget = Budget.objects.get(user=user, id=budget_no)
+        except ObjectDoesNotExist as e:
+            return Response(
+                {'message': f'유효한 값을 입력해주세요. {e}'},
+                status=status.HTTP_406_NOT_ACCEPTABLE
+            )
+
+        serializer = BudgetDetailSerializer(budget)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
