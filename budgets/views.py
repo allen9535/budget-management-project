@@ -87,6 +87,7 @@ class BudgetCreateAPIView(APIView):
         )
 
 
+# api/v1/budgets/list/
 class BudgetListAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -100,9 +101,11 @@ class BudgetListAPIView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+# api/v1/budgets/detail/<int:budget_no>
 class BudgetDetailAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
+    # api/v1/budgets/detail/<int:budget_no>
     def get(self, request, budget_no):
         user = request.user
 
@@ -117,3 +120,28 @@ class BudgetDetailAPIView(APIView):
         serializer = BudgetDetailSerializer(budget)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    # api/v1/budgets/detail/<int:budget_no>/update/
+    def put(self, request, budget_no):
+        user = request.user
+
+        try:
+            budget = Budget.objects.get(user=user, id=budget_no)
+        except ObjectDoesNotExist as e:
+            return Response(
+                {'message': f'유효한 값을 입력해주세요. {e}'},
+                status=status.HTTP_406_NOT_ACCEPTABLE
+            )
+
+        serializer = BudgetSerializer(budget, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                {'data': serializer.data},
+                status=status.HTTP_200_OK
+            )
+
+        return Response(
+            {'message': '데이터 수정에 실패했습니다. 입력값을 확인해주세요.'},
+            status=status.HTTP_400_BAD_REQUEST
+        )

@@ -11,4 +11,9 @@ urlpatterns = [
         BudgetDetailAPIView.as_view(),
         name='budget_detail'
     ),
+    path(
+        'detail/<int:budget_no>/update/',
+        BudgetDetailAPIView.as_view(),
+        name='budget_detail'
+    ),
 ]
