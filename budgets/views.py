@@ -145,3 +145,22 @@ class BudgetDetailAPIView(APIView):
             {'message': '데이터 수정에 실패했습니다. 입력값을 확인해주세요.'},
             status=status.HTTP_400_BAD_REQUEST
         )
+
+    # api/v1/budgets/detail/<int:budget_no>/delete/
+    def delete(self, request, budget_no):
+        user = request.user
+
+        try:
+            budget = Budget.objects.get(user=user, id=budget_no)
+        except ObjectDoesNotExist as e:
+            return Response(
+                {'message': f'유효한 값을 입력해주세요. {e}'},
+                status=status.HTTP_406_NOT_ACCEPTABLE
+            )
+
+        budget.delete()
+
+        return Response(
+            {'message': '데이터가 삭제되었습니다.'},
+            status=status.HTTP_200_OK
+        )

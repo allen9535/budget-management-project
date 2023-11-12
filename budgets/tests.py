@@ -461,6 +461,36 @@ class BudgetDetailAuthorizedTestCase(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_detail_delete_default(self):
+        response = self.client.delete(
+            '/api/v1/budgets/detail/1/delete/'
+        )
+
+        if response.status_code != 200:
+            print(response.data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_detail_delete_invalid_budget_no(self):
+        response = self.client.delete(
+            '/api/v1/budgets/detail/INVALID/delete/'
+        )
+
+        if response.status_code != 404:
+            print(response.data)
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_detail_delete_wrong_budget_no(self):
+        response = self.client.delete(
+            '/api/v1/budgets/detail/2/delete/'
+        )
+
+        if response.status_code != 406:
+            print(response.data)
+
+        self.assertEqual(response.status_code, status.HTTP_406_NOT_ACCEPTABLE)
+
 
 class BudgetDetailUnauthorizedTestCase(APITestCase):
     def setUp(self):
@@ -513,6 +543,16 @@ class BudgetDetailUnauthorizedTestCase(APITestCase):
         response = self.client.put(
             '/api/v1/budgets/detail/1/update/',
             update_data
+        )
+
+        if response.status_code != 401:
+            print(response.data)
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_detail_delete_default(self):
+        response = self.client.delete(
+            '/api/v1/budgets/detail/1/delete/'
         )
 
         if response.status_code != 401:
