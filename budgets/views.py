@@ -4,7 +4,8 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 
 from categories.models import Category
-from .serializers import BudgetSerializer
+from .models import Budget
+from .serializers import BudgetSerializer, BudgetListSerializer
 
 from datetime import datetime
 
@@ -78,3 +79,16 @@ class BudgetCreateAPIView(APIView):
             {'message': '데이터 저장을 완료했습니다.'},
             status=status.HTTP_201_CREATED
         )
+
+
+class BudgetListAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        budget_list = Budget.objects.filter(user=user)
+
+        serializer = BudgetListSerializer(budget_list, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)

@@ -5,6 +5,7 @@ from django.urls import reverse
 
 from accounts.models import User
 from categories.models import Category
+from .models import Budget
 
 
 class BudgetCreateViewTestCase(APITestCase):
@@ -259,3 +260,63 @@ class BudgetCreateViewTestCase(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_406_NOT_ACCEPTABLE)
+
+
+class BudgetListTestCase(APITestCase):
+    def setUp(self):
+        User.objects.create_user(
+            username='test',
+            email='test@email.com',
+            password='qwerty123!@#',
+            is_active=True
+        )
+
+        self.login_data = {
+            'username': 'test',
+            'password': 'qwerty123!@#'
+        }
+
+        self.access_token = self.client.post(
+            reverse('login'),
+            self.login_data
+        ).data.get('access')
+
+        Category.objects.create(name='category1')
+        Category.objects.create(name='category2')
+
+        Budget.objects.create(
+            user=User.objects.get(id=1),
+            category=Category.objects.get(id=1),
+            amount=10000,
+            start_at='2023-11-12',
+            end_at='2023-11-13'
+        )
+        Budget.objects.create(
+            user=User.objects.get(id=1),
+            category=Category.objects.get(id=2),
+            amount=20000,
+            start_at='2023-11-11',
+            end_at='2023-11-12'
+        )
+
+    def test_authorized(self):
+        self.client = APIClient()
+
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f'Bearer {self.access_token}'
+        )
+
+        response = self.client.get(reverse('budget_list'))
+
+        if response.status_code != 200:
+            print(response.data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_unauthorized(self):
+        response = self.client.get(reverse('budget_list'))
+
+        if response.status_code != 401:
+            print(response.data)
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
