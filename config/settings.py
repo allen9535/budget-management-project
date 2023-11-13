@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
+from celery.schedules import crontab
 from pathlib import Path
 from dotenv import load_dotenv
 from datetime import timedelta
@@ -187,4 +188,20 @@ CACHES = {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient'
         }
     }
+}
+
+# Celery
+CELERY_BROKER_URL = 'amqp://localhost:5672'
+CELERY_RESULT_BACKEND = 'django-db'
+CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+# Celery-beat
+CELERY_TIMEZONE = 'Asia/Seoul'
+CELERY_ENABLE_UTC = False
+CELERY_BEAT_SCHEDULE = {
+    'send_messages_to_customer': {
+        'task': 'spends.tasks.send_messages_to_customer',
+        'schedule': crontab(minute='0', hour='8'),
+    },
 }

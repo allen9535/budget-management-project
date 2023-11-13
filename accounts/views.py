@@ -6,7 +6,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate
 from django.core.mail import send_mail
 from django.core.cache import cache
 

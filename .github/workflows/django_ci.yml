@@ -37,6 +37,10 @@ jobs:
                   echo "EMAIL_PORT=${{ secrets.EMAIL_PORT }}" >> .env
                   echo "EMAIL_HOST_USER=${{ secrets.EMAIL_HOST_USER }}" >> .env
                   echo "EMAIL_HOST_PASSWORD=${{ secrets.EMAIL_HOST_PASSWORD }}" >> .env
+            - name: Django Migration
+              run: |
+                  python manage.py makemigrations
+                  python manage.py migrate
             - name: Run Tests
               run: |
                   python manage.py test
