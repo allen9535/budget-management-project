@@ -60,6 +60,32 @@ class SpendCreateAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+def make_spend_list_response_data(spend_list, exclude_spend_no, categories):
+    serializer = SpendListSerializer(spend_list, many=True)
+
+    if exclude_spend_no != []:
+        try:
+            for spend_no in exclude_spend_no:
+                spend_list = spend_list.exclude(id=int(spend_no))
+        except (ValueError, TypeError) as e:
+            return Response(
+                {'message': f'유효한 지출 내역을 입력해주세요. {e}'},
+                status=status.HTTP_406_NOT_ACCEPTABLE
+            )
+
+    spend_sum = spend_list.aggregate(
+        sum=Coalesce(Sum('amount'), 0)
+    ).get('sum')
+
+    category_sum = {}
+    for category in categories:
+        category_sum[category.name] = spend_list.filter(
+            category=category
+        ).aggregate(sum=Coalesce(Sum('amount'), 0)).get('sum')
+
+    return serializer.data, spend_sum, category_sum
+
+
 # api/v1/spends/list/
 class SpendListAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -67,11 +93,6 @@ class SpendListAPIView(APIView):
     def get(self, request):
         start_at = request.query_params.get('start_at', None)
         end_at = request.query_params.get('end_at', None)
-        category = request.query_params.get('category', None)
-        min_amount = request.query_params.get('min_amount', None)
-        max_amount = request.query_params.get('max_amount', None)
-        exclude_spend_no = request.query_params.getlist('exclude', None)
-
         if (start_at is None) or (end_at is None):
             return Response(
                 {'message': '필수값(검색 시작일, 검색 종료일)을 입력해주세요.'},
@@ -83,9 +104,16 @@ class SpendListAPIView(APIView):
             end_at = datetime.strptime(end_at, '%Y-%m-%d').date()
         except ValueError as e:
             return Response(
-                {'message': f'유효한 값을 입력해주세요. {e}'},
+                {'message': f'유효한 날짜를 입력해주세요. {e}'},
                 status=status.HTTP_406_NOT_ACCEPTABLE
             )
+
+        min_amount = request.query_params.get('min_amount', None)
+        max_amount = request.query_params.get('max_amount', None)
+        category = request.query_params.get('category', None)
+        exclude_spend_no = request.query_params.getlist('exclude', None)
+
+        categories = Category.objects.all()
 
         if (min_amount is None) or (max_amount is None):
             if category is not None:
@@ -93,7 +121,7 @@ class SpendListAPIView(APIView):
                     category = Category.objects.get(name=category)
                 except ObjectDoesNotExist as e:
                     return Response(
-                        {'message': f'유효한 값을 입력해주세요. {e}'},
+                        {'message': f'유효한 카테고리를 입력해주세요. {e}'},
                         status=status.HTTP_406_NOT_ACCEPTABLE
                     )
 
@@ -104,27 +132,15 @@ class SpendListAPIView(APIView):
                     category=category.id
                 )
 
-                serializer = SpendListSerializer(spend_list, many=True)
-
-                try:
-                    spend_list = spend_list.exclude(id=int(exclude_spend_no))
-                except (ValueError, TypeError) as e:
-                    pass
-
-                spend_sum = spend_list.aggregate(
-                    sum=Coalesce(Sum('amount'), 0)
-                ).get('sum')
-
-                categories = Category.objects.all()
-                category_sum = {}
-                for category in categories:
-                    category_sum[category.name] = spend_list.filter(
-                        category=category
-                    ).aggregate(sum=Coalesce(Sum('amount'), 0)).get('sum')
+                serializer_data, spend_sum, category_sum = make_spend_list_response_data(
+                    spend_list,
+                    exclude_spend_no,
+                    categories
+                )
 
                 return Response(
                     {
-                        'data': serializer.data,
+                        'list': serializer_data,
                         'spend_sum': spend_sum,
                         'category_sum': category_sum
                     },
@@ -137,28 +153,15 @@ class SpendListAPIView(APIView):
                 spend_at__lte=end_at
             )
 
-            serializer = SpendListSerializer(spend_list, many=True)
-
-            try:
-                for spend_no in exclude_spend_no:
-                    spend_list = spend_list.exclude(id=int(spend_no))
-            except (ValueError, TypeError) as e:
-                pass
-
-            spend_sum = spend_list.aggregate(
-                sum=Coalesce(Sum('amount'), 0)
-            ).get('sum')
-
-            categories = Category.objects.all()
-            category_sum = {}
-            for category in categories:
-                category_sum[category.name] = spend_list.filter(
-                    category=category
-                ).aggregate(sum=Coalesce(Sum('amount'), 0)).get('sum')
+            serializer_data, spend_sum, category_sum = make_spend_list_response_data(
+                spend_list,
+                exclude_spend_no,
+                categories
+            )
 
             return Response(
                 {
-                    'data': serializer.data,
+                    'list': serializer_data,
                     'spend_sum': spend_sum,
                     'category_sum': category_sum
                 },
@@ -198,27 +201,15 @@ class SpendListAPIView(APIView):
                 category=category.id
             )
 
-            serializer = SpendListSerializer(spend_list, many=True)
-
-            try:
-                spend_list = spend_list.exclude(id=int(exclude_spend_no))
-            except (ValueError, TypeError) as e:
-                pass
-
-            spend_sum = spend_list.aggregate(
-                sum=Coalesce(Sum('amount'), 0)
-            ).get('sum')
-
-            categories = Category.objects.all()
-            category_sum = {}
-            for category in categories:
-                category_sum[category.name] = spend_list.filter(
-                    category=category
-                ).aggregate(sum=Coalesce(Sum('amount'), 0)).get('sum')
+            serializer_data, spend_sum, category_sum = make_spend_list_response_data(
+                spend_list,
+                exclude_spend_no,
+                categories
+            )
 
             return Response(
                 {
-                    'data': serializer.data,
+                    'list': serializer_data,
                     'spend_sum': spend_sum,
                     'category_sum': category_sum
                 },
@@ -233,27 +224,15 @@ class SpendListAPIView(APIView):
             amount__lte=max_amount
         )
 
-        serializer = SpendListSerializer(spend_list, many=True)
-
-        try:
-            spend_list = spend_list.exclude(id=int(exclude_spend_no))
-        except (ValueError, TypeError) as e:
-            pass
-
-        spend_sum = spend_list.aggregate(
-            sum=Coalesce(Sum('amount'), 0)
-        ).get('sum')
-
-        categories = Category.objects.all()
-        category_sum = {}
-        for category in categories:
-            category_sum[category.name] = spend_list.filter(
-                category=category
-            ).aggregate(sum=Coalesce(Sum('amount'), 0)).get('sum')
+        serializer_data, spend_sum, category_sum = make_spend_list_response_data(
+            spend_list,
+            exclude_spend_no,
+            categories
+        )
 
         return Response(
             {
-                'data': serializer.data,
+                'list': serializer_data,
                 'spend_sum': spend_sum,
                 'category_sum': category_sum
             },
