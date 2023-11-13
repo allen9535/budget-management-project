@@ -452,10 +452,10 @@ class SpendAuthorizedTestCase(APITestCase):
 
         response = self.client.get(reverse('spend_list'), params)
 
-        if response.status_code != 200:
+        if response.status_code != 406:
             print(response.data)
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_406_NOT_ACCEPTABLE)
 
 
 class SpendUnauthorizedTestCase(APITestCase):

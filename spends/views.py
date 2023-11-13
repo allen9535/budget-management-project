@@ -83,7 +83,13 @@ def make_spend_list_response_data(spend_list, exclude_spend_no, categories):
             category=category
         ).aggregate(sum=Coalesce(Sum('amount'), 0)).get('sum')
 
-    return serializer.data, spend_sum, category_sum
+    return Response(
+        {
+            'list': serializer.data,
+            'spend_sum': spend_sum,
+            'category_sum': category_sum
+        }, status=status.HTTP_200_OK
+    )
 
 
 # api/v1/spends/list/
@@ -132,20 +138,13 @@ class SpendListAPIView(APIView):
                     category=category.id
                 )
 
-                serializer_data, spend_sum, category_sum = make_spend_list_response_data(
+                response_data = make_spend_list_response_data(
                     spend_list,
                     exclude_spend_no,
                     categories
                 )
 
-                return Response(
-                    {
-                        'list': serializer_data,
-                        'spend_sum': spend_sum,
-                        'category_sum': category_sum
-                    },
-                    status=status.HTTP_200_OK
-                )
+                return response_data
 
             spend_list = Spend.objects.filter(
                 user=request.user,
@@ -153,20 +152,13 @@ class SpendListAPIView(APIView):
                 spend_at__lte=end_at
             )
 
-            serializer_data, spend_sum, category_sum = make_spend_list_response_data(
+            response_data = make_spend_list_response_data(
                 spend_list,
                 exclude_spend_no,
                 categories
             )
 
-            return Response(
-                {
-                    'list': serializer_data,
-                    'spend_sum': spend_sum,
-                    'category_sum': category_sum
-                },
-                status=status.HTTP_200_OK
-            )
+            return response_data
 
         try:
             min_amount = int(min_amount)
@@ -201,20 +193,13 @@ class SpendListAPIView(APIView):
                 category=category.id
             )
 
-            serializer_data, spend_sum, category_sum = make_spend_list_response_data(
+            response_data = make_spend_list_response_data(
                 spend_list,
                 exclude_spend_no,
                 categories
             )
 
-            return Response(
-                {
-                    'list': serializer_data,
-                    'spend_sum': spend_sum,
-                    'category_sum': category_sum
-                },
-                status=status.HTTP_200_OK
-            )
+            return response_data
 
         spend_list = Spend.objects.filter(
             user=request.user.id,
@@ -224,20 +209,13 @@ class SpendListAPIView(APIView):
             amount__lte=max_amount
         )
 
-        serializer_data, spend_sum, category_sum = make_spend_list_response_data(
+        response_data = make_spend_list_response_data(
             spend_list,
             exclude_spend_no,
             categories
         )
 
-        return Response(
-            {
-                'list': serializer_data,
-                'spend_sum': spend_sum,
-                'category_sum': category_sum
-            },
-            status=status.HTTP_200_OK
-        )
+        return response_data
 
 
 # api/v1/detail/<int:spend_no>
