@@ -11,7 +11,7 @@ class BudgetViewAuthorizedTestCase(APITestCase):
         self.client = APIClient()
 
         self.login_data = {
-            'username': 'yeongsugim',
+            'username': 'wo',
             'password': 'qwerty123!@#'
         }
 
@@ -25,174 +25,195 @@ class BudgetViewAuthorizedTestCase(APITestCase):
         )
 
     def test_create_default(self):
-        request_data = [
-            {
-                'category': 'house',
-                'amount': 10000,
-                'start_at': '2023-11-10',
-                'end_at': '2023-11-11'
+        request_data = {
+            'start_at': '2023-11-10',
+            'end_at': '2023-11-11',
+            'budgets': {
+                'house': 1000000
             }
-        ]
+        }
 
         response = self.client.post(
             path=reverse('budget_create'),
             data=request_data
         )
+
+        if response.status_code != 201:
+            print(response.data)
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_create_multiple_data(self):
-        request_data = [
-            {
-                'category': 'house',
-                'amount': 10000,
-                'start_at': '2023-11-10',
-                'end_at': '2023-11-11'
-            },
-            {
-                'category': 'house',
-                'amount': 20000,
-                'start_at': '2023-11-11',
-                'end_at': '2023-11-12'
+        request_data = {
+            'start_at': '2023-11-10',
+            'end_at': '2023-11-11',
+            'budgets': {
+                'house': 1000000,
+                'food': 100000
             }
-        ]
+        }
 
         response = self.client.post(
             path=reverse('budget_create'),
             data=request_data
         )
+
+        if response.status_code != 201:
+            print(response.data)
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_create_no_category(self):
-        request_data = [
-            {
-                'amount': 10000,
-                'start_at': '2023-11-10',
-                'end_at': '2023-11-11'
+        request_data = {
+            'start_at': '2023-11-10',
+            'end_at': '2023-11-11',
+            'budgets': {
+                '': 1000000
             }
-        ]
+        }
 
         response = self.client.post(
             path=reverse('budget_create'),
             data=request_data
         )
 
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        if response.status_code != 406:
+            print(response.data)
+
+        self.assertEqual(response.status_code, status.HTTP_406_NOT_ACCEPTABLE)
 
     def test_create_no_amount(self):
-        request_data = [
-            {
-                'category': 'house',
-                'start_at': '2023-11-10',
-                'end_at': '2023-11-11'
+        request_data = {
+            'start_at': '2023-11-10',
+            'end_at': '2023-11-11',
+            'budgets': {
+                'house': ''
             }
-        ]
+        }
 
         response = self.client.post(
             path=reverse('budget_create'),
             data=request_data
         )
 
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        if response.status_code != 406:
+            print(response.data)
+
+        self.assertEqual(response.status_code, status.HTTP_406_NOT_ACCEPTABLE)
 
     def test_create_no_start_at(self):
-        request_data = [
-            {
-                'category': 'house',
-                'amount': 10000,
-                'end_at': '2023-11-11'
+        request_data = {
+            'end_at': '2023-11-11',
+            'budgets': {
+                'house': 1000000,
+                'food': 100000
             }
-        ]
+        }
 
         response = self.client.post(
             path=reverse('budget_create'),
             data=request_data
         )
+
+        if response.status_code != 400:
+            print(response.data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_create_no_end_at(self):
-        request_data = [
-            {
-                'category': 'house',
-                'amount': 10000,
-                'start_at': '2023-11-10'
+        request_data = {
+            'start_at': '2023-11-10',
+            'budgets': {
+                'house': 1000000,
+                'food': 100000
             }
-        ]
+        }
 
         response = self.client.post(
             path=reverse('budget_create'),
             data=request_data
         )
+
+        if response.status_code != 400:
+            print(response.data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_create_unvalid_category(self):
-        request_data = [
-            {
-                'category': 'UNVALID',
-                'amount': 10000,
-                'start_at': '2023-11-10',
-                'end_at': '2023-11-11'
+    def test_create_invalid_category(self):
+        request_data = {
+            'start_at': '2023-11-10',
+            'end_at': '2023-11-11',
+            'budgets': {
+                'INVALID': 1000000
             }
-        ]
+        }
 
         response = self.client.post(
             path=reverse('budget_create'),
             data=request_data
         )
 
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-
-    def test_create_unvalid_amount(self):
-        request_data = [
-            {
-                'category': 'house',
-                'amount': 'string',
-                'start_at': '2023-11-10',
-                'end_at': '2023-11-11'
-            }
-        ]
-
-        response = self.client.post(
-            path=reverse('budget_create'),
-            data=request_data
-        )
+        if response.status_code != 406:
+            print(response.data)
 
         self.assertEqual(response.status_code, status.HTTP_406_NOT_ACCEPTABLE)
 
-    def test_create_unvalid_start_at(self):
-        request_data = [
-            {
-                'category': 'house',
-                'amount': 10000,
-                'start_at': 'UNVALID',
-                'end_at': '2023-11-11'
+    def test_create_invalid_amount(self):
+        request_data = {
+            'start_at': '2023-11-10',
+            'end_at': '2023-11-11',
+            'budgets': {
+                'house': 'INVALID'
             }
-        ]
+        }
 
         response = self.client.post(
             path=reverse('budget_create'),
             data=request_data
         )
+
+        if response.status_code != 406:
+            print(response.data)
 
         self.assertEqual(response.status_code, status.HTTP_406_NOT_ACCEPTABLE)
 
-    def test_create_unvalid_end_at(self):
-        request_data = [
-            {
-                'category': 'house',
-                'amount': 10000,
-                'start_at': '2023-11-10',
-                'end_at': 99999
+    def test_create_invalid_start_at(self):
+        request_data = {
+            'start_at': 'INVALID',
+            'end_at': '2023-11-11',
+            'budgets': {
+                'house': 1000000,
+                'food': 100000
             }
-        ]
+        }
 
         response = self.client.post(
             path=reverse('budget_create'),
             data=request_data
         )
+
+        if response.status_code != 406:
+            print(response.data)
+
+        self.assertEqual(response.status_code, status.HTTP_406_NOT_ACCEPTABLE)
+
+    def test_create_invalid_end_at(self):
+        request_data = {
+            'start_at': '2023-11-10',
+            'end_at': 'INVALID',
+            'budgets': {
+                'house': 1000000,
+                'food': 100000
+            }
+        }
+
+        response = self.client.post(
+            path=reverse('budget_create'),
+            data=request_data
+        )
+
+        if response.status_code != 406:
+            print(response.data)
 
         self.assertEqual(response.status_code, status.HTTP_406_NOT_ACCEPTABLE)
 
@@ -206,7 +227,7 @@ class BudgetViewAuthorizedTestCase(APITestCase):
 
     def test_detail_default(self):
         response = self.client.get(
-            '/api/v1/budgets/detail/148'
+            '/api/v1/budgets/detail/80'
         )
 
         if response.status_code != 200:
@@ -240,7 +261,7 @@ class BudgetViewAuthorizedTestCase(APITestCase):
         }
 
         response = self.client.put(
-            '/api/v1/budgets/detail/148/update/',
+            '/api/v1/budgets/detail/80/update/',
             update_data
         )
 
@@ -296,7 +317,7 @@ class BudgetViewAuthorizedTestCase(APITestCase):
 
     def test_delete_default(self):
         response = self.client.delete(
-            '/api/v1/budgets/detail/148/delete/'
+            '/api/v1/budgets/detail/80/delete/'
         )
 
         if response.status_code != 200:
