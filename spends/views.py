@@ -5,9 +5,12 @@ from rest_framework.permissions import IsAuthenticated
 
 from django.core.exceptions import ObjectDoesNotExist
 
+from django.db.models.functions import Coalesce
+from django.db.models import Sum
+
 from categories.models import Category
 from .models import Spend
-from .serializers import SpendSerializer
+from .serializers import SpendSerializer, SpendListSerializer
 
 from datetime import datetime
 
@@ -67,6 +70,7 @@ class SpendListAPIView(APIView):
         category = request.query_params.get('category', None)
         min_amount = request.query_params.get('min_amount', None)
         max_amount = request.query_params.get('max_amount', None)
+        exclude_spend_no = request.query_params.get('exclude', None)
 
         if (start_at is None) or (end_at is None):
             return Response(
@@ -94,29 +98,69 @@ class SpendListAPIView(APIView):
                     )
 
                 spend_list = Spend.objects.filter(
-                    user=request.user.id,
+                    user=request.user,
                     spend_at__gte=start_at,
                     spend_at__lte=end_at,
                     category=category.id
                 )
 
-                serializer = SpendSerializer(spend_list, many=True)
+                serializer = SpendListSerializer(spend_list, many=True)
+
+                try:
+                    spend_list = spend_list.exclude(id=int(exclude_spend_no))
+                except (ValueError, TypeError) as e:
+                    pass
+
+                spend_sum = spend_list.aggregate(
+                    sum=Coalesce(Sum('amount'), 0)
+                ).get('sum')
+
+                categories = Category.objects.all()
+                category_sum = {}
+                for category in categories:
+                    category_sum[category.name] = spend_list.filter(
+                        category=category
+                    ).aggregate(sum=Coalesce(Sum('amount'), 0)).get('sum')
 
                 return Response(
-                    {'data': serializer.data},
+                    {
+                        'data': serializer.data,
+                        'spend_sum': spend_sum,
+                        'category_sum': category_sum
+                    },
                     status=status.HTTP_200_OK
                 )
 
             spend_list = Spend.objects.filter(
-                user=request.user.id,
+                user=request.user,
                 spend_at__gte=start_at,
                 spend_at__lte=end_at
             )
 
-            serializer = SpendSerializer(spend_list, many=True)
+            serializer = SpendListSerializer(spend_list, many=True)
+
+            try:
+                spend_list = spend_list.exclude(id=int(exclude_spend_no))
+            except (ValueError, TypeError) as e:
+                pass
+
+            spend_sum = spend_list.aggregate(
+                sum=Coalesce(Sum('amount'), 0)
+            ).get('sum')
+
+            categories = Category.objects.all()
+            category_sum = {}
+            for category in categories:
+                category_sum[category.name] = spend_list.filter(
+                    category=category
+                ).aggregate(sum=Coalesce(Sum('amount'), 0)).get('sum')
 
             return Response(
-                {'data': serializer.data},
+                {
+                    'data': serializer.data,
+                    'spend_sum': spend_sum,
+                    'category_sum': category_sum
+                },
                 status=status.HTTP_200_OK
             )
 
@@ -145,7 +189,7 @@ class SpendListAPIView(APIView):
                 )
 
             spend_list = Spend.objects.filter(
-                user=request.user.id,
+                user=request.user,
                 spend_at__gte=start_at,
                 spend_at__lte=end_at,
                 amount__gte=min_amount,
@@ -153,10 +197,30 @@ class SpendListAPIView(APIView):
                 category=category.id
             )
 
-            serializer = SpendSerializer(spend_list, many=True)
+            serializer = SpendListSerializer(spend_list, many=True)
+
+            try:
+                spend_list = spend_list.exclude(id=int(exclude_spend_no))
+            except (ValueError, TypeError) as e:
+                pass
+
+            spend_sum = spend_list.aggregate(
+                sum=Coalesce(Sum('amount'), 0)
+            ).get('sum')
+
+            categories = Category.objects.all()
+            category_sum = {}
+            for category in categories:
+                category_sum[category.name] = spend_list.filter(
+                    category=category
+                ).aggregate(sum=Coalesce(Sum('amount'), 0)).get('sum')
 
             return Response(
-                {'data': serializer.data},
+                {
+                    'data': serializer.data,
+                    'spend_sum': spend_sum,
+                    'category_sum': category_sum
+                },
                 status=status.HTTP_200_OK
             )
 
@@ -168,10 +232,30 @@ class SpendListAPIView(APIView):
             amount__lte=max_amount
         )
 
-        serializer = SpendSerializer(spend_list, many=True)
+        serializer = SpendListSerializer(spend_list, many=True)
+
+        try:
+            spend_list = spend_list.exclude(id=int(exclude_spend_no))
+        except (ValueError, TypeError) as e:
+            pass
+
+        spend_sum = spend_list.aggregate(
+            sum=Coalesce(Sum('amount'), 0)
+        ).get('sum')
+
+        categories = Category.objects.all()
+        category_sum = {}
+        for category in categories:
+            category_sum[category.name] = spend_list.filter(
+                category=category
+            ).aggregate(sum=Coalesce(Sum('amount'), 0)).get('sum')
 
         return Response(
-            {'data': serializer.data},
+            {
+                'data': serializer.data,
+                'spend_sum': spend_sum,
+                'category_sum': category_sum
+            },
             status=status.HTTP_200_OK
         )
 
