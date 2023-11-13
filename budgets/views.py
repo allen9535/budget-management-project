@@ -189,7 +189,7 @@ class BudgetRecommendAPIView(APIView):
 
         category_average = {}
         for category in categories:
-            filtered_budgets = all_budgets.filter(category=category.id)
+            filtered_budgets = all_budgets.filter(category=category)
 
             category_count = filtered_budgets.aggregate(
                 count=Coalesce(Count('category'), 0)
@@ -208,14 +208,14 @@ class BudgetRecommendAPIView(APIView):
         for key, value in category_average.items():
             percentage = round((value / sum_category_average), 2)
 
-            if percentage <= 0.10:
+            if percentage <= 0.1:
                 category_percentage['others'] += percentage
                 category_percentage[key] = 0
             else:
-                category_percentage[key] = percentage * total_budget
-        category_percentage['others'] = round(
+                category_percentage[key] = int(percentage * total_budget)
+        category_percentage['others'] = int(round(
             category_percentage.get('others'),
             2
-        ) * total_budget
+        ) * total_budget)
 
         return Response({'data': category_percentage}, status=status.HTTP_200_OK)
