@@ -103,6 +103,11 @@ DATABASES = {
     }
 }
 
+DATABASES['default']['TEST'] = {
+    'ENGINE': 'django.db.backends.sqlite3',
+    'NAME': BASE_DIR / "test_db.sqlite3",
+}
+
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -148,6 +153,7 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
+    'TEST_REQUEST_DEFAULT_FORMAT': 'json',
 }
 
 # Simple JWT 설정
