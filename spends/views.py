@@ -70,7 +70,7 @@ class SpendListAPIView(APIView):
         category = request.query_params.get('category', None)
         min_amount = request.query_params.get('min_amount', None)
         max_amount = request.query_params.get('max_amount', None)
-        exclude_spend_no = request.query_params.get('exclude', None)
+        exclude_spend_no = request.query_params.getlist('exclude', None)
 
         if (start_at is None) or (end_at is None):
             return Response(
@@ -140,7 +140,8 @@ class SpendListAPIView(APIView):
             serializer = SpendListSerializer(spend_list, many=True)
 
             try:
-                spend_list = spend_list.exclude(id=int(exclude_spend_no))
+                for spend_no in exclude_spend_no:
+                    spend_list = spend_list.exclude(id=int(spend_no))
             except (ValueError, TypeError) as e:
                 pass
 
