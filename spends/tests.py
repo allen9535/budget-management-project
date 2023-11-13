@@ -11,7 +11,7 @@ class SpendAuthorizedTestCase(APITestCase):
         self.client = APIClient()
 
         self.login_data = {
-            'username': 'yeongsugim',
+            'username': 'wo',
             'password': 'qwerty123!@#'
         }
 
@@ -337,7 +337,7 @@ class SpendAuthorizedTestCase(APITestCase):
 
     def test_detail_default(self):
         response = self.client.get(
-            '/api/v1/spends/detail/12'
+            '/api/v1/spends/detail/46'
         )
 
         if response.status_code != 200:
@@ -368,7 +368,7 @@ class SpendAuthorizedTestCase(APITestCase):
         }
 
         response = self.client.put(
-            '/api/v1/spends/detail/12/update/',
+            '/api/v1/spends/detail/46/update/',
             update_data
         )
 
@@ -398,7 +398,7 @@ class SpendAuthorizedTestCase(APITestCase):
         }
 
         response = self.client.put(
-            '/api/v1/spends/detail/12/update/',
+            '/api/v1/spends/detail/46/update/',
             update_data
         )
 
@@ -408,7 +408,7 @@ class SpendAuthorizedTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_delete_default(self):
-        response = self.client.delete('/api/v1/spends/detail/12/delete/')
+        response = self.client.delete('/api/v1/spends/detail/46/delete/')
 
         if response.status_code != 200:
             print(response.data)
