@@ -1,6 +1,11 @@
 from django.urls import path
 
-from .views import BudgetCreateAPIView, BudgetListAPIView, BudgetDetailAPIView
+from .views import (
+    BudgetCreateAPIView,
+    BudgetListAPIView,
+    BudgetDetailAPIView,
+    BudgetRecommendAPIView
+)
 
 
 urlpatterns = [
@@ -21,4 +26,5 @@ urlpatterns = [
         BudgetDetailAPIView.as_view(),
         name='budget_delete'
     ),
+    path('recommend/', BudgetRecommendAPIView.as_view(), name='budget_recommend')
 ]

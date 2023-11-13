@@ -5,6 +5,9 @@ from rest_framework.permissions import IsAuthenticated
 
 from django.core.exceptions import ObjectDoesNotExist
 
+from django.db.models.functions import Coalesce
+from django.db.models import Count, Sum
+
 from categories.models import Category
 from .models import Budget
 from .serializers import (
@@ -164,3 +167,55 @@ class BudgetDetailAPIView(APIView):
             {'message': '데이터가 삭제되었습니다.'},
             status=status.HTTP_200_OK
         )
+
+
+class BudgetRecommendAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            total_budget = int(request.data.get('amount'))
+
+            if total_budget <= 0:
+                raise ValueError
+        except ValueError as e:
+            return Response(
+                {'message': f'유효한 값을 입력해주세요. {e}'},
+                status=status.HTTP_406_NOT_ACCEPTABLE
+            )
+
+        all_budgets = Budget.objects.all()
+        categories = Category.objects.all()
+
+        category_average = {}
+        for category in categories:
+            filtered_budgets = all_budgets.filter(category=category)
+
+            category_count = filtered_budgets.aggregate(
+                count=Coalesce(Count('category'), 0)
+            ).get('count')
+
+            category_sum = filtered_budgets.aggregate(
+                sum=Coalesce(Sum('amount'), 0)
+            ).get('sum')
+
+            category_average[category.name] = (category_sum / category_count)
+
+        sum_category_average = sum(category_average.values())
+
+        category_percentage = category_average.copy()
+        category_percentage['others'] = 0
+        for key, value in category_average.items():
+            percentage = round((value / sum_category_average), 2)
+
+            if percentage <= 0.1:
+                category_percentage['others'] += percentage
+                category_percentage[key] = 0
+            else:
+                category_percentage[key] = int(percentage * total_budget)
+        category_percentage['others'] = int(round(
+            category_percentage.get('others'),
+            2
+        ) * total_budget)
+
+        return Response({'data': category_percentage}, status=status.HTTP_200_OK)
