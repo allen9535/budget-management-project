@@ -9,10 +9,12 @@ from django.db.models.functions import Coalesce
 from django.db.models import Sum
 
 from categories.models import Category
+from budgets.models import Budget
 from .models import Spend
 from .serializers import SpendSerializer, SpendListSerializer
 
-from datetime import datetime
+from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
 
 
 # api/v1/spends/create/
@@ -282,5 +284,103 @@ class SpendDetailAPIView(APIView):
 
         return Response(
             {'message': '데이터가 삭제되었습니다.'},
+            status=status.HTTP_200_OK
+        )
+
+
+class SpendAnalyticsAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        categories = Category.objects.all()
+        spends = Spend.objects.filter(user=user)
+
+        today = datetime.now().date()
+
+        response_data = {}
+
+        this_month_spend = spends.filter(
+            spend_at__gte=datetime(today.year, today.month, 1).date(),
+            spend_at__lte=today
+        )
+
+        last_month_spend = spends.filter(
+            spend_at__gte=(
+                datetime(today.year, today.month, 1).date() -
+                relativedelta(months=1)
+            ),
+            spend_at__lte=(today - relativedelta(months=1))
+        )
+
+        this_month_spend_sum = this_month_spend.aggregate(
+            sum=Coalesce(Sum('amount'), 0)).get('sum')
+
+        last_month_spend_sum = last_month_spend.aggregate(
+            sum=Coalesce(Sum('amount'), 0)
+        ).get('sum')
+
+        try:
+            response_data['spend_per_last_month'] = {
+                'total': f'{int(round((this_month_spend_sum / last_month_spend_sum) * 100, 0))}%'
+            }
+        except ZeroDivisionError as e:
+            response_data['spend_per_last_month'] = {
+                'total': 'No Data'
+            }
+
+        for category in categories:
+            this_month_category_spend_sum = this_month_spend.filter(
+                category=category
+            ).aggregate(
+                sum=Coalesce(Sum('amount'), 0)
+            ).get('sum')
+
+            last_month_category_spend_sum = last_month_spend.filter(
+                category=category
+            ).aggregate(
+                sum=Coalesce(Sum('amount'), 0)
+            ).get('sum')
+
+            try:
+                response_data['spend_per_last_month'][
+                    category.name] = f'{int(round((this_month_category_spend_sum / last_month_category_spend_sum) * 100, 0))}%'
+            except ZeroDivisionError as e:
+                response_data['spend_per_last_month'][category.name] = 'No Data'
+
+        spends_for_weekday = spends.exclude(
+            spend_at=today
+        )
+
+        spends_for_weekday_sum = 0
+        for spend in spends_for_weekday:
+            if spend.spend_at.weekday() == today.weekday():
+                spends_for_weekday_sum += spend.amount
+
+        spends_for_today_sum = spends.filter(spend_at=today).aggregate(
+            sum=Coalesce(Sum('amount'), 0)
+        ).get('sum')
+        response_data['spend_per_last_weekdays'] = f'{int((round((spends_for_today_sum / spends_for_weekday_sum) * 100, 0)))}%'
+
+        other_user_today_spends = Spend.objects.filter(
+            spend_at=today).exclude(user=user)
+        other_user_today_spends_sum = other_user_today_spends.aggregate(
+            sum=Coalesce(Sum('amount'), 0)
+        ).get('sum')
+
+        user_today_spends_sum = spends.filter(spend_at=today).aggregate(
+            sum=Coalesce(Sum('amount'), 0)
+        ).get('sum')
+
+        try:
+            response_data['spend_per_others'] = f'{int(round((user_today_spends_sum / other_user_today_spends_sum) * 100, 0))}%'
+        except:
+            response_data['spend_per_others'] = 'No Data'
+
+        return Response(
+            {
+                'data': response_data
+            },
             status=status.HTTP_200_OK
         )

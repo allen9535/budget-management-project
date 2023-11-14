@@ -3,7 +3,8 @@ from django.urls import path
 from .views import (
     SpendCreateAPIView,
     SpendListAPIView,
-    SpendDetailAPIView
+    SpendDetailAPIView,
+    SpendAnalyticsAPIView
 )
 
 
@@ -17,4 +18,6 @@ urlpatterns = [
     path('detail/<int:spend_no>/delete/',
          SpendDetailAPIView.as_view(),
          name='spend_delete'),
+
+    path('analytics/', SpendAnalyticsAPIView.as_view(), name='spend_analytics'),
 ]

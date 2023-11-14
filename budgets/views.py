@@ -78,12 +78,6 @@ class BudgetCreateAPIView(APIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            # except (ValueError, TypeError) as e:
-            #     return Response(
-            #         {'message': f'유효한 값을 입력해주세요. {e}'},
-            #         status=status.HTTP_406_NOT_ACCEPTABLE
-            #     )
-
         return Response(
             {'message': '데이터 저장을 완료했습니다.'},
             status=status.HTTP_201_CREATED
