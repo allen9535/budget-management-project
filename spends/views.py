@@ -364,9 +364,9 @@ class SpendAnalyticsAPIView(APIView):
         ).get('sum')
         response_data['spend_per_last_weekdays'] = f'{int((round((spends_for_today_sum / spends_for_weekday_sum) * 100, 0)))}%'
 
-        other_user_today_spends_sum = Spend.objects.exclude(user=user).filter(
+        other_user_today_spends_average = Spend.objects.exclude(user=user).filter(
             spend_at=today
-        ).aggregate(sum=Coalesce(Sum('amount'), 0)).get('sum')
+        ).aggregate(average=Avg('amount')).get('average')
 
         match today.month:
             case 1, 3, 5, 7, 8, 10, 12:
@@ -382,13 +382,14 @@ class SpendAnalyticsAPIView(APIView):
         ).get('average') / month_day
 
         other_user_percent = int(
-            round((other_user_today_spends_sum /
+            round((other_user_today_spends_average /
                   other_user_budget_per_day) * 100, 0)
         )
 
-        user_today_spends_sum = spends.filter(spend_at=today).aggregate(
-            sum=Coalesce(Sum('amount'), 0)
-        ).get('sum')
+        user_today_spends_average = spends.filter(spend_at=today).aggregate(
+            average=Avg('amount')
+        ).get('average')
+
         user_budget_per_day = Budget.objects.filter(
             start_at=datetime(today.year, today.month, 1).date(),
             end_at=datetime(today.year, today.month, month_day).date()
@@ -397,7 +398,7 @@ class SpendAnalyticsAPIView(APIView):
         ).get('average') / month_day
 
         user_percent = int(
-            round((user_today_spends_sum / user_budget_per_day) * 100, 0)
+            round((user_today_spends_average / user_budget_per_day) * 100, 0)
         )
 
         spend_per_other = user_percent - other_user_percent
