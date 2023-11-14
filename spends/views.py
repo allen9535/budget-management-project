@@ -445,18 +445,27 @@ class SpendAnalyticsAPIView(APIView):
     def get(self, request):
         user = request.user
 
+        # 전체 카테고리 가져오기
         categories = Category.objects.all()
+        # 현재 로그인한 사용자의 지출 내역 전체 가져오기
         spends = Spend.objects.filter(user=user)
 
+        # 오늘 날짜를 date 타입으로
         today = datetime.now().date()
 
         response_data = {}
 
+        # 이번달 1일부터 오늘까지 사용한 내역 필터링
+        # 이번달 1일 <= 지출일 <= 오늘
+        # eg) 2023-11-01 <= 지출일 <= 2023-11-14
         this_month_spend = spends.filter(
             spend_at__gte=datetime(today.year, today.month, 1).date(),
             spend_at__lte=today
         )
 
+        # 지난달 1일부터 지난달 오늘 날짜까지 사용한 내역 필터링
+        # 지난달 1일 <= 지출일 <= 지난달 오늘 날짜
+        # eg) 2023-10-01 <= 지출일 <= 2023-10-14
         last_month_spend = spends.filter(
             spend_at__gte=(
                 datetime(today.year, today.month, 1).date() -
@@ -465,14 +474,21 @@ class SpendAnalyticsAPIView(APIView):
             spend_at__lte=(today - relativedelta(months=1))
         )
 
+        # 이번달 1일부터 오늘까지 지출 내역 합계
         this_month_spend_sum = this_month_spend.aggregate(
             sum=Coalesce(Sum('amount'), 0)).get('sum')
 
+        # 지난달 1일부터 지난달 오늘 날짜까지 지출 내역 합계
         last_month_spend_sum = last_month_spend.aggregate(
             sum=Coalesce(Sum('amount'), 0)
         ).get('sum')
 
+        # 만약 위의 두 값 중 하나라도 없으면 0이 되므로
+        # ZeroDivisionError 대신 'No Data'라는 임의의 값을 입력
         try:
+            # 지난달 대비 이번달의 소비율 계산
+            # 두 값을 나누고 100을 곱한 다음, 소숫점 첫째 자리에서 반올림
+            # 그 후 정수형으로 형변환
             response_data['spend_per_last_month'] = {
                 'total': f'{int(round((this_month_spend_sum / last_month_spend_sum) * 100, 0))}%'
             }
@@ -481,49 +497,74 @@ class SpendAnalyticsAPIView(APIView):
                 'total': 'No Data'
             }
 
+        # 전체 카테고리를 가져와서 순회
         for category in categories:
+            # 이번달 오늘까지의 지출 내역에 카테고리를 넣어 필터링
+            # 그 후 지출액 합계 산출
             this_month_category_spend_sum = this_month_spend.filter(
                 category=category
             ).aggregate(
                 sum=Coalesce(Sum('amount'), 0)
             ).get('sum')
 
+            # 지난달 오늘까지의 지출 내역에 카테고리를 넣어 필터링
+            # 그 후 지출액 합계 산출
             last_month_category_spend_sum = last_month_spend.filter(
                 category=category
             ).aggregate(
                 sum=Coalesce(Sum('amount'), 0)
             ).get('sum')
 
+            # 만약 위의 두 값 중 하나라도 없으면 0이 되므로
+            # ZeroDivisionError 대신 'No Data'라는 임의의 값을 입력
             try:
+                # 지난달 해당 카테고리 대비 이번달 해당 카테고리의 소비율 계산
+                # 두 값을 나누고 100을 곱한 다음, 소숫점 첫째 자리에서 반올림
+                # 그 후 정수형으로 형변환
                 response_data['spend_per_last_month'][
                     category.name] = f'{int(round((this_month_category_spend_sum / last_month_category_spend_sum) * 100, 0))}%'
             except ZeroDivisionError as e:
                 response_data['spend_per_last_month'][category.name] = 'No Data'
 
+        # 사용자의 전체 지출 내역에서 오늘을 제외
         spends_for_weekday = spends.exclude(
             spend_at=today
         )
 
+        # 오늘을 제외한, 이전의 모든 같은 요일의 지출액 합계 산출
+        # eg) 오늘은 화요일 -> 오늘 이전의 모든 화요일의 지출액 합계 산출
         spends_for_weekday_sum = 0
         for spend in spends_for_weekday:
             if spend.spend_at.weekday() == today.weekday():
                 spends_for_weekday_sum += spend.amount
 
+        # 전체 지출 내역에서 오늘 사용자가 지출한 지출액 합계 산출
         spends_for_today_sum = spends.filter(spend_at=today).aggregate(
             sum=Coalesce(Sum('amount'), 0)
         ).get('sum')
+        # 이전의 요일들 전체 지출액 대비 오늘 전체 지출액의 소비율 계산
+        # 두 값을 나누고 100을 곱한 다음, 소숫점 첫째 자리에서 반올림
+        # 그 후 정수형으로 형변환
         response_data['spend_per_last_weekdays'] = f'{int((round((spends_for_today_sum / spends_for_weekday_sum) * 100, 0)))}%'
 
+        # 현재 로그인한 사용자를 제외한 모든 사용자의 오늘 지출액 평균 산출
+        # -> 즉 나를 뺀 나머지 전부가 오늘 사용한 지출액 평균
+        # 카테고리는 고려되고 있지 않음
         other_user_today_spends_average = Spend.objects.exclude(user=user).filter(
             spend_at=today
         ).aggregate(average=Avg('amount')).get('average')
 
+        # 월에 따른 말일 결정
         match today.month:
             case 1, 3, 5, 7, 8, 10, 12:
                 month_day = 31
             case _:
                 month_day = 30
 
+        # 현재 로그인한 사용자를 제외한 모든 사용자의 이번달 1일부터 이번달 말일까지의 예산액 평균 산출
+        # 그 후 일별로 나눔
+        # -> 즉 나를 뺀 나머지 전부가 이번달에 사용할 일단위 평균 예산액
+        # -> 예산은 일단위가 아니라 월단위로 입력되므로 가능
         other_user_budget_per_day = Budget.objects.exclude(user=user).filter(
             start_at=datetime(today.year, today.month, 1).date(),
             end_at=datetime(today.year, today.month, month_day).date()
@@ -531,34 +572,55 @@ class SpendAnalyticsAPIView(APIView):
             average=Avg('amount')
         ).get('average') / month_day
 
+        # 타 사용자의 일단위 평균 예산액 대비 오늘 평균 지출액을 통한 소비율 계산
+        # 두 값을 나누고 100을 곱한 다음, 소숫점 첫째 자리에서 반올림
+        # 그 후 정수형으로 형변환
         other_user_percent = int(
             round((other_user_today_spends_average /
                   other_user_budget_per_day) * 100, 0)
         )
 
+        # 현재 로그인한 사용자의 오늘 지출액 평균 산출
+        # 카테고리는 고려되고 있지 않음
         user_today_spends_average = spends.filter(spend_at=today).aggregate(
             average=Avg('amount')
         ).get('average')
 
+        # 현재 로그인한 사용자의 이번달 1일부터 말일까지의 예산액 평균 산출
+        # 그 후 일별로 나눔
+        # -> 즉 내가 이번달에 사용할 일단위 평균 예산액
+        # -> 예산은 일단위가 아니라 월단위로 입력되므로 가능
         user_budget_per_day = Budget.objects.filter(
+            user=user,
             start_at=datetime(today.year, today.month, 1).date(),
             end_at=datetime(today.year, today.month, month_day).date()
         ).aggregate(
             average=Avg('amount')
         ).get('average') / month_day
 
+        # 현재 로그인한 사용자의 일단위 평균 예산액 대비 오늘 평균 지출액을 통한 소비율 계산
+        # 두 값을 나누고 100을 곱한 다음, 소숫점 첫째 자리에서 반올림
+        # 그 후 정수형으로 형변환
         user_percent = int(
             round((user_today_spends_average / user_budget_per_day) * 100, 0)
         )
 
+        # 최종적으로는 타 사용자 대비 현재 로그인한 사용자의 소비율이 얼마나 되는가를 산출
+        # eg) 타 사용자 평균 소비율 50% / 내 평균 소비율 60% -> 나는 타 사용자 대비 120%에 해당
+        # -> 즉 두 퍼센트의 차이를 타 사용자 평균 소비율로 나눠준 다음,
+        # -> 내가 더 많이 사용했다면: 100에 해당 값 가산
+        # -> 내가 덜 사용했다면: 100에 해당 값 감산
         spend_per_other = user_percent - other_user_percent
         if spend_per_other > 0:
             spend_per_other = f'{100 + int(round(spend_per_other / other_user_percent * 100, 0))}%'
+        # 두 값이 정확하게 같다면 100%에 해당
         elif spend_per_other == 0:
             spend_per_other = f'100%'
         else:
             spend_per_other = f'{100 - int(round(spend_per_other / other_user_percent * 100, 0))}%'
 
+        # 만약 위의 두 값 중 하나라도 없으면 0이 되므로
+        # ZeroDivisionError 대신 'No Data'라는 임의의 값을 입력
         try:
             response_data['spend_per_others'] = spend_per_other
         except:
