@@ -204,4 +204,8 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'spends.tasks.send_messages_to_customer',
         'schedule': crontab(minute='0', hour='8'),
     },
+    'send_result_to_customer': {
+        'task': 'spends.tasks.send_result_to_customer',
+        'schedule': crontab(minute='0', hour='20'),
+    },
 }
