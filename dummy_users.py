@@ -11,7 +11,7 @@ from accounts.models import User
 fake = Faker('ko-kr')
 
 if __name__ == '__main__':
-    for i in range(100):
+    for i in range(10):
         User.objects.create_user(
             username=fake.unique.user_name(),
             email=fake.unique.email(),

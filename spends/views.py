@@ -6,13 +6,15 @@ from rest_framework.permissions import IsAuthenticated
 from django.core.exceptions import ObjectDoesNotExist
 
 from django.db.models.functions import Coalesce
-from django.db.models import Sum
+from django.db.models import Sum, Avg
 
 from categories.models import Category
+from budgets.models import Budget
 from .models import Spend
 from .serializers import SpendSerializer, SpendListSerializer
 
 from datetime import datetime
+from dateutil.relativedelta import relativedelta
 
 
 # api/v1/spends/create/
@@ -282,5 +284,139 @@ class SpendDetailAPIView(APIView):
 
         return Response(
             {'message': '데이터가 삭제되었습니다.'},
+            status=status.HTTP_200_OK
+        )
+
+
+# api/v1/spends/analytics/
+class SpendAnalyticsAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        categories = Category.objects.all()
+        spends = Spend.objects.filter(user=user)
+
+        today = datetime.now().date()
+
+        response_data = {}
+
+        this_month_spend = spends.filter(
+            spend_at__gte=datetime(today.year, today.month, 1).date(),
+            spend_at__lte=today
+        )
+
+        last_month_spend = spends.filter(
+            spend_at__gte=(
+                datetime(today.year, today.month, 1).date() -
+                relativedelta(months=1)
+            ),
+            spend_at__lte=(today - relativedelta(months=1))
+        )
+
+        this_month_spend_sum = this_month_spend.aggregate(
+            sum=Coalesce(Sum('amount'), 0)).get('sum')
+
+        last_month_spend_sum = last_month_spend.aggregate(
+            sum=Coalesce(Sum('amount'), 0)
+        ).get('sum')
+
+        try:
+            response_data['spend_per_last_month'] = {
+                'total': f'{int(round((this_month_spend_sum / last_month_spend_sum) * 100, 0))}%'
+            }
+        except ZeroDivisionError as e:
+            response_data['spend_per_last_month'] = {
+                'total': 'No Data'
+            }
+
+        for category in categories:
+            this_month_category_spend_sum = this_month_spend.filter(
+                category=category
+            ).aggregate(
+                sum=Coalesce(Sum('amount'), 0)
+            ).get('sum')
+
+            last_month_category_spend_sum = last_month_spend.filter(
+                category=category
+            ).aggregate(
+                sum=Coalesce(Sum('amount'), 0)
+            ).get('sum')
+
+            try:
+                response_data['spend_per_last_month'][
+                    category.name] = f'{int(round((this_month_category_spend_sum / last_month_category_spend_sum) * 100, 0))}%'
+            except ZeroDivisionError as e:
+                response_data['spend_per_last_month'][category.name] = 'No Data'
+
+        spends_for_weekday = spends.exclude(
+            spend_at=today
+        )
+
+        spends_for_weekday_sum = 0
+        for spend in spends_for_weekday:
+            if spend.spend_at.weekday() == today.weekday():
+                spends_for_weekday_sum += spend.amount
+
+        spends_for_today_sum = spends.filter(spend_at=today).aggregate(
+            sum=Coalesce(Sum('amount'), 0)
+        ).get('sum')
+        response_data['spend_per_last_weekdays'] = f'{int((round((spends_for_today_sum / spends_for_weekday_sum) * 100, 0)))}%'
+
+        other_user_today_spends_average = Spend.objects.exclude(user=user).filter(
+            spend_at=today
+        ).aggregate(average=Avg('amount')).get('average')
+
+        match today.month:
+            case 1, 3, 5, 7, 8, 10, 12:
+                month_day = 31
+            case _:
+                month_day = 30
+
+        other_user_budget_per_day = Budget.objects.exclude(user=user).filter(
+            start_at=datetime(today.year, today.month, 1).date(),
+            end_at=datetime(today.year, today.month, month_day).date()
+        ).aggregate(
+            average=Avg('amount')
+        ).get('average') / month_day
+
+        other_user_percent = int(
+            round((other_user_today_spends_average /
+                  other_user_budget_per_day) * 100, 0)
+        )
+
+        user_today_spends_average = spends.filter(spend_at=today).aggregate(
+            average=Avg('amount')
+        ).get('average')
+
+        user_budget_per_day = Budget.objects.filter(
+            start_at=datetime(today.year, today.month, 1).date(),
+            end_at=datetime(today.year, today.month, month_day).date()
+        ).aggregate(
+            average=Avg('amount')
+        ).get('average') / month_day
+
+        user_percent = int(
+            round((user_today_spends_average / user_budget_per_day) * 100, 0)
+        )
+
+        spend_per_other = user_percent - other_user_percent
+        if spend_per_other > 0:
+            spend_per_other = f'{100 + int(round(spend_per_other / other_user_percent * 100, 0))}%'
+        elif spend_per_other == 0:
+            spend_per_other = f'100%'
+        else:
+            spend_per_other = f'{100 - int(round(spend_per_other / other_user_percent * 100, 0))}%'
+
+        try:
+            response_data['spend_per_others'] = spend_per_other
+        except:
+            response_data['spend_per_others'] = 'No Data'
+
+        return Response(
+            {
+                'data': response_data
+            },
             status=status.HTTP_200_OK
         )
