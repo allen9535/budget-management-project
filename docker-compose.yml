@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+    budget-rabbitmq:
+        image: rabbitmq
+        container_name: budget-rabbitmq
+        ports:
+            - '5672:5672'
+        networks:
+            - budget-network
+
+    budget-redis:
+        image: redis
+        container_name: budget-redis
+        ports:
+            - '6379:6379'
+        networks:
+            - budget-network
+
+    budget-celery:
+        container_name: budget-celery
+        build:
+            context: .
+            dockerfile: ./Dockerfile
+        depends_on:
+            - budget-postgres
+        command: celery -A config worker -l info
+        env_file:
+            - ./.env
+        networks:
+            - budget-network
+
+    budget-celery-beat:
+        container_name: budget-celery-beat
+        build:
+            context: .
+            dockerfile: ./Dockerfile
+        depends_on:
+            - budget-postgres
+        command: celery -A config beat -l info
+        env_file:
+            - ./.env
+        networks:
+            - budget-network
+
+    budget-core:
+        container_name: budget-core
+        build:
+            context: .
+            dockerfile: ./Dockerfile
+        depends_on:
+            - budget-postgres
+        command: sh -c "./script.sh"
+        ports:
+            - '8000:8000'
+        expose:
+            - '8000'
+        env_file:
+            - ./.env
+        networks:
+            - budget-network
+
+networks:
+    budget-network:
+        driver: bridge
