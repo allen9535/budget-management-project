@@ -24,17 +24,11 @@ CATEGORIES = Category.objects.all()
 
 
 @shared_task
-def category_spend_consulting(user_budgets, user_spends, period_start, period_end):
-    messages = {}
-
-    return messages
-
-
-@shared_task
 def send_messages_to_customer():
     email_subject = '[예산 관리 서비스] 오늘 예산에 대한 컨설팅입니다!'
 
-    for i in range(1, 2):
+    # for i in range(1, ALL_USERS.count()): # 실사용
+    for i in range(1, 2):  # 테스트용
         user = ALL_USERS.get(id=i)
 
         user_budgets = Budget.objects.filter(user=user)
@@ -112,7 +106,8 @@ def send_messages_to_customer():
             email_subject,
             email_body,
             os.getenv('EMAIL_HOST_USER'),
-            ['allen9535@naver.com']
+            ['allen9535@naver.com']  # 테스트용
+            # [user.email for user in ALL_USERS] # 실사용
         )
 
 
@@ -121,7 +116,8 @@ def send_result_to_customer():
     email_subject = '[예산 관리 서비스] 오늘 지출 내역에 대한 안내입니다!'
     today_date = datetime.now().date()
 
-    for i in range(1, 2):
+    # for i in range(ALL_USERS.count()): # 실사용
+    for i in range(1, 2):  # 테스트용
         email_body = ''
 
         user = ALL_USERS.get(id=i)
@@ -181,5 +177,6 @@ def send_result_to_customer():
             email_subject,
             email_body,
             os.getenv('EMAIL_HOST_USER'),
-            ['allen9535@naver.com']
+            ['allen9535@naver.com']  # 테스트용
+            # [user.email for user in ALL_USERS] # 실사용
         )
