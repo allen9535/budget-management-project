@@ -6,14 +6,14 @@ from rest_framework.permissions import IsAuthenticated
 from django.core.exceptions import ObjectDoesNotExist
 
 from django.db.models.functions import Coalesce
-from django.db.models import Sum
+from django.db.models import Sum, Avg
 
 from categories.models import Category
 from budgets.models import Budget
 from .models import Spend
 from .serializers import SpendSerializer, SpendListSerializer
 
-from datetime import datetime, timedelta
+from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
 
@@ -288,6 +288,7 @@ class SpendDetailAPIView(APIView):
         )
 
 
+# api/v1/spends/analytics/
 class SpendAnalyticsAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -363,18 +364,52 @@ class SpendAnalyticsAPIView(APIView):
         ).get('sum')
         response_data['spend_per_last_weekdays'] = f'{int((round((spends_for_today_sum / spends_for_weekday_sum) * 100, 0)))}%'
 
-        other_user_today_spends = Spend.objects.filter(
-            spend_at=today).exclude(user=user)
-        other_user_today_spends_sum = other_user_today_spends.aggregate(
-            sum=Coalesce(Sum('amount'), 0)
-        ).get('sum')
+        other_user_today_spends_sum = Spend.objects.exclude(user=user).filter(
+            spend_at=today
+        ).aggregate(sum=Coalesce(Sum('amount'), 0)).get('sum')
+
+        match today.month:
+            case 1, 3, 5, 7, 8, 10, 12:
+                month_day = 31
+            case _:
+                month_day = 30
+
+        other_user_budget_per_day = Budget.objects.exclude(user=user).filter(
+            start_at=datetime(today.year, today.month, 1).date(),
+            end_at=datetime(today.year, today.month, month_day).date()
+        ).aggregate(
+            average=Avg('amount')
+        ).get('average') / month_day
+
+        other_user_percent = int(
+            round((other_user_today_spends_sum /
+                  other_user_budget_per_day) * 100, 0)
+        )
 
         user_today_spends_sum = spends.filter(spend_at=today).aggregate(
             sum=Coalesce(Sum('amount'), 0)
         ).get('sum')
+        user_budget_per_day = Budget.objects.filter(
+            start_at=datetime(today.year, today.month, 1).date(),
+            end_at=datetime(today.year, today.month, month_day).date()
+        ).aggregate(
+            average=Avg('amount')
+        ).get('average') / month_day
+
+        user_percent = int(
+            round((user_today_spends_sum / user_budget_per_day) * 100, 0)
+        )
+
+        spend_per_other = user_percent - other_user_percent
+        if spend_per_other > 0:
+            spend_per_other = f'{100 + int(round(spend_per_other / other_user_percent * 100, 0))}%'
+        elif spend_per_other == 0:
+            spend_per_other = f'100%'
+        else:
+            spend_per_other = f'{100 - int(round(spend_per_other / other_user_percent * 100, 0))}%'
 
         try:
-            response_data['spend_per_others'] = f'{int(round((user_today_spends_sum / other_user_today_spends_sum) * 100, 0))}%'
+            response_data['spend_per_others'] = spend_per_other
         except:
             response_data['spend_per_others'] = 'No Data'
 
