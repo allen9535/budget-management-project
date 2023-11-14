@@ -119,7 +119,13 @@ def send_messages_to_customer():
 @shared_task
 def send_result_to_customer():
     email_subject = '[예산 관리 서비스] 오늘 지출 내역에 대한 안내입니다!'
+
     today_date = datetime.now().date()
+    match today_date.month:
+        case 1, 3, 5, 7, 8, 10, 12:
+            month_day = 31
+        case _:
+            month_day = 30
 
     for i in range(1, 2):
         email_body = ''
@@ -131,13 +137,16 @@ def send_result_to_customer():
 
         last_budget = user_budgets.last()
 
-        today_spend_sum = user_spends.filter(
-            spend_at=today_date
+        total_budget_sum = user_budgets.filter(
+            start_at__gte=last_budget.start_at,
+            end_at__lte=last_budget.end_at
         ).aggregate(
             sum=Coalesce(Sum('amount'), 0)
         ).get('sum')
 
-        email_body += f'오늘 지출한 총액: {today_spend_sum:,}원\n\n'
+        fiti_budget = int(round(total_budget_sum / month_day, -2))
+
+        email_body += f'오늘 지출 가능한 총액: {fiti_budget:,}원\n\n'
 
         for category in CATEGORIES:
             category_budget_sum = user_budgets.filter(
@@ -156,12 +165,6 @@ def send_result_to_customer():
             ).get('sum')
 
             email_body += f'{category.name} 예산 총액: {category_budget_sum}\n'
-
-            match today_date.month:
-                case 1, 3, 5, 7, 8, 10, 12:
-                    month_day = 31
-                case _:
-                    month_day = 30
 
             try:
                 fit_spend = int(round(category_budget_sum / month_day, -2))
