@@ -120,6 +120,7 @@
 ## API 문서
 
 Swagger: `http://127.0.0.1:{port}`
+![Swagger](https://doc-images-s3.s3.ap-northeast-2.amazonaws.com/budget_proejct_swagger.png)
 
 <br/>
 
