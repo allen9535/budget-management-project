@@ -22,8 +22,6 @@ services:
         build:
             context: .
             dockerfile: ./Dockerfile
-        depends_on:
-            - budget-postgres
         command: celery -A config worker -l info
         env_file:
             - ./.env
@@ -35,8 +33,6 @@ services:
         build:
             context: .
             dockerfile: ./Dockerfile
-        depends_on:
-            - budget-postgres
         command: celery -A config beat -l info
         env_file:
             - ./.env
@@ -48,8 +44,6 @@ services:
         build:
             context: .
             dockerfile: ./Dockerfile
-        depends_on:
-            - budget-postgres
         command: sh -c "./script.sh"
         ports:
             - '8000:8000'
