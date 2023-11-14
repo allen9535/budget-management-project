@@ -202,10 +202,17 @@ CELERY_ENABLE_UTC = False
 CELERY_BEAT_SCHEDULE = {
     'send_messages_to_customer': {
         'task': 'spends.tasks.send_messages_to_customer',
-        'schedule': crontab(minute='0', hour='8'),
+        'schedule': crontab(minute='0', hour='8'),      # 매일 08:00 스케쥴러 작동
     },
     'send_result_to_customer': {
         'task': 'spends.tasks.send_result_to_customer',
-        'schedule': crontab(minute='0', hour='20'),
+        'schedule': crontab(minute='0', hour='20'),     # 매일 20:00 스케쥴러 작동
     },
+}
+
+# Swagger
+SWAGGER_SETTINGS = {
+    "SECURITY_DEFINITIONS": {
+        "DRF Token": {"type": "apiKey", "name": "Authorization", "in": "header"}
+    }
 }

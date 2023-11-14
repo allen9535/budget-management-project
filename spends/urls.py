@@ -4,6 +4,8 @@ from .views import (
     SpendCreateAPIView,
     SpendListAPIView,
     SpendDetailAPIView,
+    SpendUpdateAPIView,
+    SpendDeleteAPIView,
     SpendAnalyticsAPIView
 )
 
@@ -13,10 +15,10 @@ urlpatterns = [
     path('list/', SpendListAPIView.as_view(), name='spend_list'),
     path('detail/<int:spend_no>', SpendDetailAPIView.as_view(), name='spend_detail'),
     path('detail/<int:spend_no>/update/',
-         SpendDetailAPIView.as_view(),
+         SpendUpdateAPIView.as_view(),
          name='spend_update'),
     path('detail/<int:spend_no>/delete/',
-         SpendDetailAPIView.as_view(),
+         SpendDeleteAPIView.as_view(),
          name='spend_delete'),
 
     path('analytics/', SpendAnalyticsAPIView.as_view(), name='spend_analytics'),

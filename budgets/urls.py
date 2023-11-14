@@ -4,6 +4,8 @@ from .views import (
     BudgetCreateAPIView,
     BudgetListAPIView,
     BudgetDetailAPIView,
+    BudgetUpdateAPIView,
+    BudgetDeleteAPIView,
     BudgetRecommendAPIView
 )
 
@@ -18,12 +20,12 @@ urlpatterns = [
     ),
     path(
         'detail/<int:budget_no>/update/',
-        BudgetDetailAPIView.as_view(),
+        BudgetUpdateAPIView.as_view(),
         name='budget_update'
     ),
     path(
         'detail/<int:budget_no>/delete/',
-        BudgetDetailAPIView.as_view(),
+        BudgetDeleteAPIView.as_view(),
         name='budget_delete'
     ),
     path('recommend/', BudgetRecommendAPIView.as_view(), name='budget_recommend')

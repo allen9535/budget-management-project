@@ -8,7 +8,10 @@ from .models import User
 
 class UserSignupViewTestCase(APITestCase):
     def setUp(self):
+        self.client = APIClient()
+
         self.url = reverse('signup')
+
         self.user_data = {
             'username': 'test',
             'email': 'test@email.com',
