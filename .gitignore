@@ -11,7 +11,7 @@ db.sqlite3
 db.sqlite3-journal
 media
 
-migrations/
+# migrations/
 
 my_settings.py
 rating_data.json
